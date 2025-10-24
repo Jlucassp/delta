@@ -6,11 +6,8 @@
     <title>Protocolo Delta</title>
 
     <!-- React 18 UMD -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-    <!-- Framer Motion UMD (expõe window.framerMotion) -->
-    <script crossorigin src="https://unpkg.com/framer-motion/dist/framer-motion.umd.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
     <!-- Babel Standalone para transpilar TSX no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -26,12 +23,11 @@
       src="./IntroProtocoloDelta.tsx">
     </script>
 
-    <!-- Bootstrap: renderiza o componente global window.App -->
+    <!-- Monta o componente global -->
     <script type="text/babel" data-presets="typescript,react">
       const rootEl = document.getElementById('root');
-      const root = ReactDOM.createRoot(rootEl);
-      // window.App é definido no final do IntroProtocoloDelta.tsx
-      root.render(React.createElement((window).App));
+      const root = window.ReactDOM.createRoot(rootEl);
+      root.render(window.React.createElement(window.App));
     </script>
   </body>
 </html>
