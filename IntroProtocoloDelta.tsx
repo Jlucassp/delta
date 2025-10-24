@@ -1,14 +1,13 @@
 /* Roda sem build via index.html:
-   - Usa React/FramerMotion globais (UMD)
+   - Usa React global (UMD)
    - Exporta window.App
 */
 const React = (window as any).React;
-const { motion } = (window as any).framerMotion;
 
 // Badge PNG local
 const BADGE_SRC = "./delta_badge.png";
 
-// Tipos só onde o editor reclamava de 'implicit any'
+// Tipagem leve só para o editor
 type SpeedLine = {
   id: number;
   left: string;
@@ -38,42 +37,51 @@ const PILOTOS = [
 
 export default function IntroProtocoloDelta({ showSeconds = 8 }) {
   const [visibleCount, setVisibleCount] = React.useState(0);
+  const [progress, setProgress] = React.useState(0); // 0..100
   const finalState = visibleCount > PILOTOS.length;
 
-  // generate speed lines once (sem generic)
+  // speed lines (geradas 1x)
   const speedLines = React.useMemo(() => {
     const arr: SpeedLine[] = Array.from({ length: 18 }).map((_, i) => ({
       id: i,
       left: `${Math.round(Math.random() * 100)}%`,
-      dur: 1 + Math.random() * 1.6,
-      delay: Math.random() * 1.2,
-      opacity: 0.12 + Math.random() * 0.18,
+      dur: +(1 + Math.random() * 1.6).toFixed(2),
+      delay: +((Math.random() * 1.2)).toFixed(2),
+      opacity: +(0.12 + Math.random() * 0.18).toFixed(2),
     }));
     return arr;
   }, []);
 
+  // revela os pilotos + atualiza barra
   React.useEffect(() => {
     let t: number = 0;
+
+    // inicia barra com um pulinho inicial
+    setProgress(Math.min(100, (visibleCount / PILOTOS.length) * 100 + 20));
 
     t = (window as any).setTimeout(function showNext() {
       setVisibleCount((c: number) => {
         const next = c + 1;
+        // avança progressivamente (com transition)
+        setProgress(Math.min(100, (next / PILOTOS.length) * 100 + 20));
+
         if (next < PILOTOS.length) {
           t = (window as any).setTimeout(showNext, 380);
         } else {
-          // trigger final reveal after short delay
-          (window as any).setTimeout(() => setVisibleCount((c2: number) => c2 + 1), 500);
+          (window as any).setTimeout(() => {
+            setVisibleCount((c2: number) => c2 + 1); // aciona estado final
+            setProgress(100);
+          }, 500);
         }
         return next;
       });
     }, 1100);
 
-    return () => {
-      (window as any).clearTimeout(t);
-    };
+    return () => (window as any).clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // basic styles (kept inline so no external deps are required)
+  // estilos inline para não depender de CSS externo
   const styles = {
     root: {
       width: "100%",
@@ -143,12 +151,14 @@ export default function IntroProtocoloDelta({ showSeconds = 8 }) {
       position: "absolute" as const,
       left: "50%",
       top: "50%",
-      transform: "translate(-50%,-50%)",
       zIndex: 50,
       display: "flex",
       flexDirection: "column" as const,
       alignItems: "center",
       pointerEvents: "none" as const,
+      transition: "opacity .9s ease, transform .9s ease",
+      opacity: finalState ? 1 : 0,
+      transform: finalState ? "scale(1)" : "scale(0.9)",
     },
     badgeImg: { width: 300, filter: "drop-shadow(0 0 14px #7aff00)" },
     finalMsg: { marginTop: 12, color: "#bfffa0", fontWeight: 800, textShadow: "0 0 12px #7aff00" },
@@ -181,6 +191,13 @@ export default function IntroProtocoloDelta({ showSeconds = 8 }) {
       <style>{`
         @keyframes pulse { 0%{opacity:1}50%{opacity:0.35}100%{opacity:1} }
         .speed-line { position:absolute; height:2px; background:linear-gradient(90deg, transparent, rgba(120,255,160,0.9), transparent); }
+        @keyframes slideY { 
+          0% { transform: translateY(-40px); } 
+          100% { transform: translateY(110%); } 
+        }
+        @keyframes spin360 {
+          to { transform: rotate(360deg); }
+        }
       `}</style>
 
       {/* sirenes */}
@@ -189,17 +206,19 @@ export default function IntroProtocoloDelta({ showSeconds = 8 }) {
 
       {/* speed lines */}
       {speedLines.map((s: SpeedLine) => (
-        <motion.div
+        <div
           key={s.id}
           className="speed-line"
-          style={{ left: s.left, width: "55%", opacity: s.opacity }}
-          initial={{ y: -40 }}
-          animate={{ y: "110%" }}
-          transition={{ repeat: Infinity, duration: s.dur, delay: s.delay, ease: "linear" }}
+          style={{
+            left: s.left,
+            width: "55%",
+            opacity: s.opacity,
+            animation: `slideY ${s.dur}s linear ${s.delay}s infinite`,
+          }}
         />
       ))}
 
-      {/* radar (SVG) placed behind content */}
+      {/* radar (SVG) com rotação via CSS */}
       <div
         style={{
           position: "absolute",
@@ -220,18 +239,14 @@ export default function IntroProtocoloDelta({ showSeconds = 8 }) {
             </radialGradient>
           </defs>
           <circle cx="100" cy="100" r="90" fill="url(#g2)" />
-          <motion.g
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-            style={{ transformOrigin: "100px 100px" }}
-          >
+          <g style={{ transformOrigin: "100px 100px", animation: "spin360 6s linear infinite" } as any}>
             <path d="M100 100 L190 100" stroke="#6ee08c" strokeWidth="2" strokeLinecap="round" opacity="0.9" />
             <circle cx="100" cy="100" r="6" fill="#9ff09b" />
             <g opacity="0.45">
               <circle cx="100" cy="100" r="40" stroke="#2fa46a" strokeWidth="1" fill="none" />
               <circle cx="100" cy="100" r="64" stroke="#1f7f54" strokeWidth="1" fill="none" />
             </g>
-          </motion.g>
+          </g>
         </svg>
       </div>
 
@@ -246,7 +261,7 @@ export default function IntroProtocoloDelta({ showSeconds = 8 }) {
         </div>
       </header>
 
-      {/* main content */}
+      {/* main */}
       <main style={{ zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <div style={styles.title as any}>
           <div
@@ -283,15 +298,13 @@ export default function IntroProtocoloDelta({ showSeconds = 8 }) {
 
           <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ flex: 1, height: 10, borderRadius: 8, background: "rgba(0,0,0,0.6)", overflow: "hidden" }}>
-              <motion.div
-                style={{ height: "100%", background: "linear-gradient(90deg,#7ffea0,#40c070)" }}
-                initial={{ width: 0 }}
-                animate={{
-                  width: finalState
-                    ? "100%"
-                    : Math.min(100, (visibleCount / PILOTOS.length) * 100 + 20) + "%",
+              <div
+                style={{
+                  height: "100%",
+                  background: "linear-gradient(90deg,#7ffea0,#40c070)",
+                  width: `${progress}%`,
+                  transition: `width ${Math.max(3, showSeconds)}s linear`,
                 }}
-                transition={{ duration: Math.max(3, showSeconds), ease: "linear" }}
               />
             </div>
             <div style={{ width: 50, textAlign: "right", fontSize: 12 }}>{showSeconds}s</div>
@@ -310,16 +323,11 @@ export default function IntroProtocoloDelta({ showSeconds = 8 }) {
         </div>
       </main>
 
-      {/* final badge (revealed only at the end) */}
-      <motion.div
-        style={styles.badgeWrap as any}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={finalState ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.9 }}
-      >
+      {/* final badge */}
+      <div style={styles.badgeWrap as any}>
         <img src={BADGE_SRC} alt="Unidade Delta" style={styles.badgeImg as any} />
         <div style={styles.finalMsg as any}>PROTOCOLO DELTA ATIVO ✅</div>
-      </motion.div>
+      </div>
 
       {/* footer */}
       <div
