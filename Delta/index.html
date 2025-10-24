@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Protocolo Delta</title>
+
+    <!-- React 18 UMD -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Framer Motion UMD (expõe window.framerMotion) -->
+    <script crossorigin src="https://unpkg.com/framer-motion/dist/framer-motion.umd.js"></script>
+
+    <!-- Babel Standalone para transpilar TSX no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body style="margin:0;background:#000">
+    <div id="root"></div>
+
+    <!-- Seu arquivo TSX (sem build) -->
+    <script
+      type="text/babel"
+      data-type="module"
+      data-presets="typescript,react"
+      src="./IntroProtocoloDelta.tsx">
+    </script>
+
+    <!-- Bootstrap: renderiza o componente global window.App -->
+    <script type="text/babel" data-presets="typescript,react">
+      const rootEl = document.getElementById('root');
+      const root = ReactDOM.createRoot(rootEl);
+      // window.App é definido no final do IntroProtocoloDelta.tsx
+      root.render(React.createElement((window).App));
+    </script>
+  </body>
+</html>
